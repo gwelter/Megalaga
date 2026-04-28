@@ -1,0 +1,8 @@
+{
+    "C_Cpp.default.includePath": ["\\inc",
+    "\\res",
+    "res",
+    "inc"
+],
+    "files.eol": "\n"
+}

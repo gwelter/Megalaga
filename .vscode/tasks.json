@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Clang Analyze",
+            "type": "shell",
+            "command": "clang",
+            "args": [
+                "--analyze",
+                "-I${workspaceFolder}",
+                "-I${workspaceFolder}/res",
+                "-IC:/SGDK/inc",
+                "-IC:/SGDK/res",
+                "${file}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Clang Analyze All",
+            "type": "shell",
+            "command": "clang",
+            "args": [
+                "--analyze",
+                "-I${workspaceFolder}",
+                "-I${workspaceFolder}/res",
+                "-IC:/SGDK/inc",
+                "-IC:/SGDK/res",
+                "src/*.c"
+            ],
+            "group": "build"
+        }
+    ]
+}

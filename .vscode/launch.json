@@ -1,0 +1,37 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with gdb remote",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}\\out\\rom.out",
+            "miDebuggerServerAddress": "localhost:6868",
+            "sourceFileMap": {
+                "D:\\apps\\SGDK\\src\\": "C:\\SGDK\\src\\",
+                "D:\\apps\\SGDK\\": "C:\\SGDK\\"
+            },
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "launchCompleteCommand": "None",
+            "logging": {
+                "engineLogging": true,
+                "trace": true,
+                "traceResponse": true
+            },
+            "miDebuggerPath": "C:\\SGDK\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "text": "set directories '${workspaceFolder};$cwd;$cdir'"
+                }
+            ]
+        }
+    ]
+}
