@@ -6,33 +6,88 @@
 #include <genesis.h>
 #include <resources.h>
 
-int main() {
+#define MAX_ENEMIES 6
+
+typedef struct {
+  int x;
+  int y;
+  int w;
+  int h;
+  int vel_x;
+  int vel_y;
+  int health;
+  Sprite* sprite;
+  char name[6];
+} Entity;
+
+Entity enemies[MAX_ENEMIES];
+u16 enemies_left = 0;
+
+void init_background(void) {
   VDP_loadTileSet(background.tileset, 1, DMA);
   PAL_setPalette(PAL1, background.palette->data, DMA);
 
-  int i = 0;
-  int thex = 0;
-  int they = 0;
-  int val = 1;
+  int i;
+  int the_x;
+  int the_y;
+  int value;
 
   SYS_disableInts();
   for (i = 0; i < 1280; i++) {
-    thex = i % 40;
-    they = i / 40;
-    val = (random() % (10 - 1 + 1)) + 1;
-    if (val > 3) val = 1;
-    VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL1, 0, FALSE, FALSE, val), thex, they);
+    the_x = i % 40;
+    the_y = i / 40;
+    value = (random() % 10) + 1;
+    if (value > 3) {
+      value = 1;
+    }
+    VDP_setTileMapXY(BG_B, TILE_ATTR_FULL(PAL1, 0, FALSE, FALSE, value), the_x, the_y);
   }
 
-  int offset = 0;
   VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
   SYS_enableInts();
+}
 
+void kill_entity(Entity* entity) {
+  entity->health = 0;
+  SPR_setVisibility(entity->sprite, HIDDEN);
+}
+
+void revive_entity(Entity* entity) {
+  entity->health = 1;
+  SPR_setVisibility(entity->sprite, VISIBLE);
+}
+
+int main(void) {
+  init_background();
+  SPR_init();
+
+  Entity player_entity = {
+      .x = 152,
+      .y = 192,
+      .w = 16,
+      .h = 16,
+      .vel_x = 0,
+      .vel_y = 0,
+      .health = 1,
+      .sprite = NULL,
+      .name = "PLAYER",
+  };
+
+  player_entity.sprite = SPR_addSprite(&ship, player_entity.x, player_entity.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+  // SPR_setAnim(player_entity.sprite, 0);
+  SPR_update();
+
+  int offset = 0;
   while (1) {
-    VDP_setVerticalScroll(BG_B, offset -= 2);
-    if (offset <= -256) offset = 0;
+    offset -= 2;
+    VDP_setVerticalScroll(BG_B, offset);
+    if (offset <= -256) {
+      offset = 0;
+    }
 
+    SPR_update();
     SYS_doVBlankProcess();
   }
-  return (0);
+
+  return 0;
 }
