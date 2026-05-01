@@ -7,6 +7,8 @@
 #include <resources.h>
 
 #define MAX_ENEMIES 6
+#define LEFT_EDGE 0
+#define RIGHT_EDGE 320
 
 typedef struct {
   int x;
@@ -94,6 +96,23 @@ void create_enemies() {
   PAL_setColor(34, RGB24_TO_VDPCOLOR(0x0078f8));
 }
 
+void position_enemies() {
+  u16 i = 0;
+  for (i = 0; i < MAX_ENEMIES; i++) {
+    Entity* e = &enemies[i];
+    if (e->health > 0) {
+      e->x += e->vel_x;
+      SPR_setPosition(e->sprite, e->x, e->y);
+
+      if ((e->x + e->w) > RIGHT_EDGE) {
+        e->vel_x = -1;
+      } else if (e->x < LEFT_EDGE) {
+        e->vel_x = 1;
+      }
+    }
+  }
+}
+
 int main() {
   SPR_init();
   init_background();
@@ -110,6 +129,7 @@ int main() {
       offset = 0;
     }
 
+    position_enemies();
     SPR_update();
     SYS_doVBlankProcess();
   }
