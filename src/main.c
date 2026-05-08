@@ -6,6 +6,7 @@
 #include <genesis.h>
 #include <resources.h>
 
+#define MAX_BULLETS 3
 #define MAX_ENEMIES 6
 #define LEFT_EDGE 0
 #define RIGHT_EDGE 320
@@ -35,8 +36,10 @@ Entity player_entity = {
     .sprite = NULL,
     .name = "PLAYER",
 };
+Entity bullets[MAX_BULLETS];
 Entity enemies[MAX_ENEMIES];
 u16 enemies_left = 0;
+u16 bullets_on_screen = 0;
 
 int i;
 
@@ -78,6 +81,19 @@ void create_player() {
   // SPR_setAnim(player_entity.sprite, 0);
 }
 
+void create_bullets() {
+  Entity* b = bullets;
+  for (i = 0; i < MAX_BULLETS; i++) {
+    b->x = 0;
+    b->y = 10;
+    b->w = 8;
+    b->h = 8;
+    b->sprite = SPR_addSprite(&bullet, bullets[0].x, bullets[0].y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+    sprintf(b->name, "Bu%i", i);
+    b++;
+  }
+}
+
 void create_enemies() {
   PAL_setPalette(PAL2, background.palette->data, DMA);
   Entity* e = enemies;
@@ -114,6 +130,22 @@ void position_enemies() {
   }
 }
 
+void position_bullets() {
+  u16 i = 0;
+  for (i = 0; i < MAX_BULLETS; i++) {
+    Entity* b = &bullets[i];
+    if (b->health > 0) {
+      b->y += b->vel_y;
+      if ((b->y + b->h) < 0) {
+        kill_entity(b);
+        bullets_on_screen--;
+      } else {
+        SPR_setPosition(b->sprite, b->x, b->y);
+      }
+    }
+  }
+}
+
 void position_player() {
   player_entity.x += player_entity.vel_x;
 
@@ -124,6 +156,26 @@ void position_player() {
     player_entity.x = RIGHT_EDGE - player_entity.w;
   }
   SPR_setPosition(player_entity.sprite, player_entity.x, player_entity.y);
+}
+
+void shoot_bullet() {
+  if (bullets_on_screen < MAX_BULLETS) {
+    Entity* b;
+    u16 i = 0;
+    for (i = 0; i < MAX_BULLETS; i++) {
+      b = &bullets[i];
+      if (b->health == 0) {  // Available
+        b->x = player_entity.x + 4;
+        b->y = player_entity.y;
+        revive_entity(b);
+        b->vel_y = -3;
+
+        SPR_setPosition(b->sprite, b->x, b->y);
+        bullets_on_screen++;
+        break;
+      }
+    }
+  }
 }
 
 void myJoyHandler(u16 joy, u16 changed, u16 state) {
@@ -142,6 +194,9 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
         SPR_setAnim(player_entity.sprite, ANIM_STRAIGHT);
       }
     }
+    if (state & BUTTON_B & changed) {
+      shoot_bullet();
+    }
   }
 }
 
@@ -153,6 +208,7 @@ int main() {
   JOY_setEventHandler(&myJoyHandler);
 
   create_player();
+  create_bullets();
   create_enemies();
   SPR_update();
 
@@ -166,6 +222,7 @@ int main() {
 
     position_enemies();
     position_player();
+    position_bullets();
     SPR_update();
     SYS_doVBlankProcess();
   }
