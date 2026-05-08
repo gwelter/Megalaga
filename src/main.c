@@ -76,6 +76,34 @@ void revive_entity(Entity* entity) {
   SPR_setVisibility(entity->sprite, VISIBLE);
 }
 
+int collideEntities(Entity* a, Entity* b) {
+  return (a->x < b->x + b->w && a->x + a->w > b->x && a->y < b->y + b->h && a->y + a->h >= b->y);
+}
+
+void handle_collisions() {
+  Entity* b;
+  Entity* e;
+  int i = 0;
+  int j = 0;
+  for (i = 0; i < MAX_BULLETS; i++) {
+    b = &bullets[i];
+    if (b->health > 0) {
+      for (j = 0; j < MAX_ENEMIES; j++) {
+        e = &enemies[j];
+        if (e->health > 0) {
+          if (collideEntities(b, e)) {
+            kill_entity(b);
+            kill_entity(e);
+            enemies_left--;
+            bullets_on_screen--;
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
 void create_player() {
   player_entity.sprite = SPR_addSprite(&ship, player_entity.x, player_entity.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
   // SPR_setAnim(player_entity.sprite, 0);
@@ -223,6 +251,7 @@ int main() {
     position_enemies();
     position_player();
     position_bullets();
+    handle_collisions();
     SPR_update();
     SYS_doVBlankProcess();
   }
