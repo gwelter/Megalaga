@@ -13,6 +13,9 @@
 #define ANIM_STRAIGHT 0
 #define ANIM_MOVE 1
 
+int score = 0;
+char hud_string[40] = "\0";
+
 typedef struct {
   int x;
   int y;
@@ -42,6 +45,12 @@ u16 enemies_left = 0;
 u16 bullets_on_screen = 0;
 
 int i;
+
+void update_score_display() {
+  sprintf(hud_string, "SCORE: %d - LEFT: %d", score, enemies_left);
+  VDP_clearText(0, 0, 40);
+  VDP_drawText(hud_string, 0, 0);
+}
 
 void init_background(void) {
   VDP_loadTileSet(background.tileset, 1, DMA);
@@ -96,6 +105,8 @@ void handle_collisions() {
             kill_entity(e);
             enemies_left--;
             bullets_on_screen--;
+            score += 10;
+            update_score_display();
             break;
           }
         }
@@ -113,7 +124,7 @@ void create_bullets() {
   Entity* b = bullets;
   for (i = 0; i < MAX_BULLETS; i++) {
     b->x = 0;
-    b->y = 10;
+    b->y = -10;
     b->w = 8;
     b->h = 8;
     b->sprite = SPR_addSprite(&bullet, bullets[0].x, bullets[0].y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -231,6 +242,7 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
 int main() {
   SPR_init();
   init_background();
+  update_score_display();
 
   JOY_init();
   JOY_setEventHandler(&myJoyHandler);
