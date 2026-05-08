@@ -9,6 +9,8 @@
 #define MAX_ENEMIES 6
 #define LEFT_EDGE 0
 #define RIGHT_EDGE 320
+#define ANIM_STRAIGHT 0
+#define ANIM_MOVE 1
 
 typedef struct {
   int x;
@@ -22,6 +24,17 @@ typedef struct {
   char name[6];
 } Entity;
 
+Entity player_entity = {
+    .x = 152,
+    .y = 192,
+    .w = 16,
+    .h = 16,
+    .vel_x = 0,
+    .vel_y = 0,
+    .health = 1,
+    .sprite = NULL,
+    .name = "PLAYER",
+};
 Entity enemies[MAX_ENEMIES];
 u16 enemies_left = 0;
 
@@ -61,18 +74,6 @@ void revive_entity(Entity* entity) {
 }
 
 void create_player() {
-  Entity player_entity = {
-      .x = 152,
-      .y = 192,
-      .w = 16,
-      .h = 16,
-      .vel_x = 0,
-      .vel_y = 0,
-      .health = 1,
-      .sprite = NULL,
-      .name = "PLAYER",
-  };
-
   player_entity.sprite = SPR_addSprite(&ship, player_entity.x, player_entity.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
   // SPR_setAnim(player_entity.sprite, 0);
 }
@@ -113,9 +114,43 @@ void position_enemies() {
   }
 }
 
+void position_player() {
+  player_entity.x += player_entity.vel_x;
+
+  if (player_entity.x < LEFT_EDGE) {
+    player_entity.x = LEFT_EDGE;
+  }
+  if ((player_entity.x + player_entity.w) > RIGHT_EDGE) {
+    player_entity.x = RIGHT_EDGE - player_entity.w;
+  }
+  SPR_setPosition(player_entity.sprite, player_entity.x, player_entity.y);
+}
+
+void myJoyHandler(u16 joy, u16 changed, u16 state) {
+  if (joy == JOY_1) {
+    if (state & BUTTON_RIGHT) {
+      player_entity.vel_x = 2;
+      SPR_setAnim(player_entity.sprite, ANIM_MOVE);
+      SPR_setHFlip(player_entity.sprite, TRUE);
+    } else if (state & BUTTON_LEFT) {
+      player_entity.vel_x = -2;
+      SPR_setAnim(player_entity.sprite, ANIM_MOVE);
+      SPR_setHFlip(player_entity.sprite, FALSE);
+    } else {
+      if ((changed & BUTTON_RIGHT) || (changed & BUTTON_LEFT)) {
+        player_entity.vel_x = 0;
+        SPR_setAnim(player_entity.sprite, ANIM_STRAIGHT);
+      }
+    }
+  }
+}
+
 int main() {
   SPR_init();
   init_background();
+
+  JOY_init();
+  JOY_setEventHandler(&myJoyHandler);
 
   create_player();
   create_enemies();
@@ -130,6 +165,7 @@ int main() {
     }
 
     position_enemies();
+    position_player();
     SPR_update();
     SYS_doVBlankProcess();
   }
