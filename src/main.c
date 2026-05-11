@@ -15,6 +15,8 @@
 #define ANIM_STRAIGHT 0
 #define ANIM_MOVE 1
 #define SHOT_INTERVAL 120
+#define SFX_LASER 64
+#define SFX_EXPOSION 65
 
 u16 shot_by_player = 0;
 u16 shot_ticker = 0;
@@ -116,6 +118,7 @@ void handle_collisions() {
               bullets_on_screen--;
               shot_by_player--;
               score += 10;
+              XGM_startPlayPCM(SFX_EXPOSION, 1, SOUND_PCM_CH2);
               update_score_display();
               break;
             }
@@ -124,6 +127,7 @@ void handle_collisions() {
       } else {  // Shoot by enemy
         if (collide_entities(b, &player_entity)) {
           kill_entity(&player_entity);
+          XGM_startPlayPCM(SFX_EXPOSION, 1, SOUND_PCM_CH2);
         }
       }
     }
@@ -249,6 +253,7 @@ void shoot_bullet(Entity shooter) {
         }
 
         SPR_setPosition(b->sprite, b->x, b->y);
+        XGM_startPlayPCM(SFX_LASER, 1, SOUND_PCM_CH2);
         bullets_on_screen++;
         break;
       }
@@ -280,6 +285,8 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
 
 int main() {
   SPR_init();
+  XGM_setPCM(SFX_LASER, sfx_laser, sizeof(sfx_laser));
+  XGM_setPCM(SFX_EXPOSION, sfx_explosion, sizeof(sfx_explosion));
   init_background();
   update_score_display();
 
