@@ -17,11 +17,16 @@
 #define SHOT_INTERVAL 120
 #define SFX_LASER 64
 #define SFX_EXPOSION 65
+#define POWERUP_DURATION 180
 
+u16 max_player_bullets = MAX_PLAYER_BULLETS;
 u16 shot_by_player = 0;
+u16 powerup_timer = 0;
 u16 shot_ticker = 0;
 int score = 0;
 char hud_string[40] = "\0";
+
+typedef enum { RAPID_FIRE } Powerup;
 
 typedef struct {
   int x;
@@ -46,6 +51,18 @@ Entity player_entity = {
     .sprite = NULL,
     .name = "PLAYER",
 };
+Entity powerup = {
+    .x = 0,
+    .y = 0,
+    .h = 8,
+    .w = 8,
+    .vel_x = 0,
+    .vel_y = 0,
+    .health = 0,
+    .sprite = NULL,
+    .name = "POWER",
+};
+
 Entity bullets[MAX_BULLETS];
 Entity enemies[MAX_ENEMIES];
 u16 enemies_left = 0;
@@ -54,6 +71,10 @@ u16 bullets_on_screen = 0;
 int i;
 
 void shoot_bullet(Entity shooter);
+void spawn_powerup_at(u16 x, u16 y);
+void position_powerup();
+void activate_powerup(Powerup type);
+void deactivate_powerup();
 
 void update_score_display() {
   sprintf(hud_string, "SCORE: %d - LEFT: %d", score, enemies_left);
@@ -120,6 +141,9 @@ void handle_collisions() {
               score += 10;
               XGM_startPlayPCM(SFX_EXPOSION, 1, SOUND_PCM_CH2);
               update_score_display();
+              if (enemies_left % 5 == 0) {
+                spawn_powerup_at(e->x, e->y);
+              }
               break;
             }
           }
@@ -230,11 +254,50 @@ void position_player() {
   SPR_setPosition(player_entity.sprite, player_entity.x, player_entity.y);
 }
 
+void activate_powerup(Powerup type) {
+  switch (type) {
+    case RAPID_FIRE:
+      max_player_bullets = MAX_BULLETS;
+      powerup_timer = POWERUP_DURATION;
+      PAL_setColor(18, RGB24_TO_VDPCOLOR(0xf8fc00));
+      break;
+
+    default:
+      break;
+  }
+}
+
+void deactivate_powerup() {
+  max_player_bullets = MAX_PLAYER_BULLETS;
+  PAL_setColor(18, RGB24_TO_VDPCOLOR(0xf83800));
+}
+
+void spawn_powerup_at(u16 x, u16 y) {
+  powerup.x = x;
+  powerup.y = y;
+  revive_entity(&powerup);
+}
+
+void position_powerup() {
+  if (powerup.health > 0) {
+    powerup.y++;
+    if (powerup.y > BOTTOM_EDGE) {
+      kill_entity(&powerup);
+    }
+
+    if (collide_entities(&player_entity, &powerup)) {
+      activate_powerup(RAPID_FIRE);
+      kill_entity(&powerup);
+    }
+    SPR_setPosition(powerup.sprite, powerup.x, powerup.y);
+  }
+}
+
 void shoot_bullet(Entity shooter) {
   bool fromPlayer = (shooter.y > 100);
 
   if (bullets_on_screen < MAX_BULLETS) {
-    if (fromPlayer && shot_by_player >= MAX_PLAYER_BULLETS) {
+    if (fromPlayer && shot_by_player >= max_player_bullets) {
       return;
     }
     Entity *b;
@@ -280,6 +343,9 @@ void myJoyHandler(u16 joy, u16 changed, u16 state) {
     if (state & BUTTON_B & changed) {
       shoot_bullet(player_entity);
     }
+    if (state & BUTTON_A & changed) {
+      activate_powerup(RAPID_FIRE);
+    }
   }
 }
 
@@ -296,6 +362,8 @@ int main() {
   create_player();
   create_bullets();
   create_enemies();
+  powerup.sprite = SPR_addSprite(&spr_powerup, powerup.x, powerup.y, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+  kill_entity(&powerup);
   SPR_update();
 
   int offset = 0;
@@ -309,7 +377,16 @@ int main() {
     position_enemies();
     position_player();
     position_bullets();
+    position_powerup();
     handle_collisions();
+
+    if (powerup_timer > 0) {
+      powerup_timer--;
+      if (powerup_timer == 0) {
+        deactivate_powerup();
+      }
+    }
+
     SPR_update();
     SYS_doVBlankProcess();
   }
